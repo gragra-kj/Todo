@@ -7,6 +7,13 @@ from .models import TodoModel
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action
 from django.utils import timezone
+from django.shortcuts import render
+
+from django.shortcuts import render
+
+def todo_frontend_view(request):
+    return render(request, 'todo/frontend.html')
+
 
 class TodoViewSet(viewsets.ModelViewSet):
     queryset=TodoModel.objects.all()
