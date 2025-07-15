@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from .models import TodoModel
 
-class TodoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=TodoModel
-        fields=['id','title','description','status','created_at','due_date']
+class TodoSerializer(serializers.HyperlinkedModelSerializer):
+     class Meta:
+        model = TodoModel
+        fields = ['url', 'id', 'title', 'description', 'status', 'due_date', 'completed_at']
+        extra_kwargs = {
+            'url': {'view_name': 'todo-detail', 'lookup_field': 'pk'}
+        }
