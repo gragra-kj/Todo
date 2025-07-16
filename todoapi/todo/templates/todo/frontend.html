@@ -1,137 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>📝 Todo Frontend</title>
+  <meta charset="UTF-8" />
+  <title>To-do Manager</title>
   <style>
-    body { font-family: Arial; margin: 30px; }
-    .task { margin-bottom: 10px; }
-    .auth-box, .todo-box { margin-top: 20px; }
-    label { display: block; margin-top: 10px; }
-    input { margin-bottom: 10px; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .task { margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; }
+    .completed { background-color: #e0ffe0; }
+    #errorMessage { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <h1>📝 My To-dos</h1>
 
-  <h1>✅ Todo App</h1>
+  <div id="taskList">Loading tasks...</div>
 
-  <div class="auth-box">
-    <h2>🔐 Login or Register</h2>
-    <form id="authForm">
-      <label>Username: <input type="text" id="username" required></label>
-      <label>Password: <input type="password" id="password" required></label>
-      <button type="submit">Login</button>
-      <button type="button" onclick="register()">Register</button>
-    </form>
-    <div id="authMessage"></div>
-  </div>
-
-  <div class="todo-box" style="display: none;">
-    <h2>📋 Your Tasks</h2>
-    <div id="todoList">Loading tasks...</div>
-
-    <h3>Add New Task</h3>
-    <form id="todoForm">
-      <label>Title: <input type="text" id="taskTitle" required></label>
-      <label>Description: <input type="text" id="taskDescription"></label>
-      <label>Status:
-        <select id="taskStatus">
-          <option value="PENDING">Pending</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-      </label>
-      <label>Due Date: <input type="date" id="taskDueDate"></label>
-      <button type="submit">Add Task</button>
-    </form>
-    <div id="todoMessage"></div>
-  </div>
+  <h2>Create New Task</h2>
+  <form id="createForm">
+    <input type="text" id="newTitle" placeholder="Task title" required />
+    <select id="newStatus">
+      <option value="PENDING">Pending</option>
+      <option value="IN_PROGRESS">In Progress</option>
+      <option value="COMPLETED">Completed</option>
+    </select>
+    <button type="submit">Add Task</button>
+  </form>
+  <div id="errorMessage"></div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000/api/todo/todo";
-    let token = "JEHnobPkiLls4QoIRFTx9W1sBsJBFI";
+    const API_BASE = "http://127.0.0.1:8000/api/todo/todo/";
+    const token = "Z1sdb1fP7IpPGNzsKyESGyA3GfvpnY";
 
-    document.getElementById("authForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-
-      const res = await fetch(`${API_BASE}/login/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        token = data.token;
-        document.querySelector(".auth-box").style.display = "none";
-        document.querySelector(".todo-box").style.display = "block";
-        loadTodos();
-      } else {
-        document.getElementById("authMessage").innerText = data.error || "Login failed.";
-      }
-    });
-
-    async function register() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-
-      const res = await fetch(`${API_BASE}/register/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById("authMessage").innerText = "🎉 Registered! You can now login.";
-      } else {
-        document.getElementById("authMessage").innerText = data.error || "Registration failed.";
-      }
-    }
-
-    async function loadTodos() {
-      const res = await fetch(`${API_BASE}/todo/`, {
-        headers: { "Authorization": `Token ${token}` }
-      });
-      const data = await res.json();
-      const list = document.getElementById("todoList");
-      list.innerHTML = "";
-      data.forEach(task => {
-        list.innerHTML += `<div class="task">📝 <strong>${task.title}</strong> - ${task.status}</div>`;
+    function fetchTasks() {
+      fetch(API_BASE, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(tasks => {
+        const taskList = document.getElementById("taskList");
+        taskList.innerHTML = "";
+        tasks.forEach(task => {
+          const taskDiv = document.createElement("div");
+          taskDiv.className = "task" + (task.status === "COMPLETED" ? " completed" : "");
+          taskDiv.innerHTML = `
+            <strong>${task.title}</strong><br/>
+            Status: ${task.status}<br/>
+            <label>Update Status:</label>
+            <select onchange="updateStatus(${task.id}, this.value)">
+              <option value="PENDING" ${task.status === "PENDING" ? "selected" : ""}>Pending</option>
+              <option value="IN_PROGRESS" ${task.status === "IN_PROGRESS" ? "selected" : ""}>In Progress</option>
+              <option value="COMPLETED" ${task.status === "COMPLETED" ? "selected" : ""}>Completed</option>
+            </select>
+            <br/>
+            <label>Edit Title:</label>
+            <input type="text" value="${task.title}" onchange="updateTitle(${task.id}, this.value)" />
+            <br/>
+            <button onclick="deleteTask(${task.id})">Delete</button>
+          `;
+          taskList.appendChild(taskDiv);
+        });
       });
     }
 
-    document.getElementById("todoForm").addEventListener("submit", async function(e) {
+    function updateStatus(id, newStatus) {
+      fetch(`${API_BASE}${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      }).then(fetchTasks);
+    }
+
+    function updateTitle(id, newTitle) {
+      fetch(`${API_BASE}${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: newTitle })
+      }).then(fetchTasks);
+    }
+
+    function deleteTask(id) {
+      fetch(`${API_BASE}${id}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }).then(fetchTasks);
+    }
+
+    document.getElementById("createForm").addEventListener("submit", e => {
       e.preventDefault();
+      const title = document.getElementById("newTitle").value;
+      const status = document.getElementById("newStatus").value;
+      const errorDiv = document.getElementById("errorMessage");
+
       const task = {
-        title: document.getElementById("taskTitle").value,
-        description: document.getElementById("taskDescription").value,
-        status: document.getElementById("taskStatus").value,
-        due_date: document.getElementById("taskDueDate").value
+        title,
+        status,
+        description: "added from UI" // Default description to avoid 400 error
       };
 
-      const res = await fetch(`${API_BASE}/todo/`, {
+      fetch(API_BASE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Token ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(task)
+      })
+      .then(async res => {
+        if (!res.ok) {
+          const err = await res.json();
+          errorDiv.textContent = "❌ Error: " + JSON.stringify(err);
+        } else {
+          document.getElementById("createForm").reset();
+          errorDiv.textContent = "";
+          fetchTasks();
+        }
+      })
+      .catch(err => {
+        errorDiv.textContent = "❌ Network error: " + err.message;
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById("todoMessage").innerText = "✅ Task added!";
-        document.getElementById("todoForm").reset();
-        loadTodos();
-      } else {
-        document.getElementById("todoMessage").innerText = "❌ Failed to add task.";
-        console.error(data);
-      }
     });
-  </script>
 
+    fetchTasks();
+  </script>
 </body>
 </html>
