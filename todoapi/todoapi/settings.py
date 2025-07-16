@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-fg)1li7zs2ra4_+n#veyom$k&v*jr)fc_jbtq$9x2+bz+afw#7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'todoeicargcode.onrender.com']
 
 
 # Application definition
@@ -130,7 +130,6 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-ALLOWED_HOSTS = ['todoeicargcode.onrender.com', 'localhost']
 
 
 # Default primary key field type
